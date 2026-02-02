@@ -1,19 +1,23 @@
-// server.js (Node 18+ FINAL FIX)
-const express = require("express");
-const cors = require("cors");
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
 
 const app = express();
+
+/* ===== Middleware ===== */
 app.use(cors());
 app.use(express.json());
 
-// 🔑 APNI REAL GROQ API KEY YAHAN PASTE KARO
-const API_KEY = process.env.API_KEY; // 🔐 secret from env
+/* ===== ENV ===== */
+const API_KEY = process.env.API_KEY; // Railway Variables me set hoga
+const PORT = process.env.PORT || 3001;
 
+/* ===== API Route ===== */
 app.post("/api/ai", async (req, res) => {
   try {
     const userText = req.body.text;
     if (!userText) {
-      return res.status(400).json({ error: "No input text" });
+      return res.status(400).json({ error: "Text missing" });
     }
 
     const response = await fetch(
@@ -21,34 +25,32 @@ app.post("/api/ai", async (req, res) => {
       {
         method: "POST",
         headers: {
+          "Authorization": `Bearer ${API_KEY}`,
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + API_KEY
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant",
+          model: "llama3-70b-8192",
           messages: [
-            { role: "system", content: "Tum ek helpful Hindi/English AI assistant ho." },
+            { role: "system", content: "You are a helpful Hindi AI assistant." },
             { role: "user", content: userText }
-          ]
-        })
+          ],
+        }),
       }
     );
 
     const data = await response.json();
-    console.log("Groq response:", data);
 
-    if (!data.choices || !data.choices.length) {
-      return res.status(500).json({ error: "Invalid AI response", data });
-    }
-
-    res.json(data);
+    res.json({
+      reply: data.choices?.[0]?.message?.content || "No response",
+    });
 
   } catch (err) {
-    console.error("Server error:", err);
-    res.status(500).json({ error: "AI server crashed" });
+    console.error("Server Error:", err);
+    res.status(500).json({ error: "AI server error" });
   }
 });
 
-app.listen(3001, () => {
-  console.log("✅ Groq AI server running on http://localhost:3001");
+/* ===== Server Start ===== */
+app.listen(PORT, () => {
+  console.log("✅ Server running on port", PORT);
 });
