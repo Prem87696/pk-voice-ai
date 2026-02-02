@@ -1,0 +1,72 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pk Voice AI Assistant</title>
+<style>
+  body { background:#111; color:#fff; font-family:Arial; text-align:center; padding:40px }
+  button { padding:15px 30px; font-size:18px; cursor:pointer }
+  #out { margin-top:20px; font-size:18px; white-space:pre-line }
+</style>
+</head>
+<body>
+
+<h1>🎤 Pk Voice AI Assistant</h1>
+<button onclick="startListening()">🎙️ Speak</button>
+
+<div id="out"></div>
+
+<script>
+const output = document.getElementById("out");
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.lang = "hi-IN";
+
+let listening = false;
+
+function startListening() {
+  if (listening) return;
+  listening = true;
+  recognition.start();
+}
+
+recognition.onend = () => {
+  listening = false;
+};
+
+recognition.onresult = async (e) => {
+  const text = e.results[0][0].transcript;
+  output.innerText = "You: " + text;
+
+  const reply = await getAIReply(text);
+  output.innerText += "\nAI: " + reply;
+
+  speak(reply);
+};
+
+async function getAIReply(text) {
+  const res = await fetch("http://localhost:3001/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+
+  const data = await res.json();
+
+  if (!data.choices) {
+    return "AI se response nahi aaya (API issue).";
+  }
+
+  return data.choices[0].message.content;
+}
+
+function speak(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "hi-IN";
+  speechSynthesis.speak(msg);
+}
+</script>
+
+</body>
+</html>
