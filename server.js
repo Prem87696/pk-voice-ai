@@ -52,5 +52,6 @@ app.post("/api/ai", async (req, res) => {
 
 /* ===== Server Start ===== */
 app.listen(PORT, () => {
-  console.log("✅ Server running on port", PORT);
+  console.log("Server running on port", PORT);
 });
+
