@@ -1,7 +1,7 @@
-import http from "http";
+ import http from "http";
 
 const PORT = process.env.PORT || 3000;
-const OPENAI_KEY = process.env.OPENAI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const server = http.createServer(async (req, res) => {
 
@@ -16,6 +16,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Gemini AI endpoint
   if (req.method === "POST" && req.url === "/api/ai") {
     let body = "";
 
@@ -24,61 +25,55 @@ const server = http.createServer(async (req, res) => {
       try {
         const { text } = JSON.parse(body || "{}");
 
-        const aiRes = await fetch(
-          "https://api.openai.com/v1/chat/completions",
+        const aiResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${OPENAI_KEY}`
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "gpt-3.5-turbo",
-              messages: [
-                { role: "system", content: "Tum ek helpful Hindi AI ho" },
-                { role: "user", content: text }
+              contents: [
+                {
+                  parts: [{ text }]
+                }
               ]
             })
           }
         );
 
-       const aiData = await aiRes.json();
+        const data = await aiResponse.json();
 
-// 🔍 Debug ke liye (Railway logs me dikhega)
-console.log("AI RAW RESPONSE:", aiData);
+        let reply = "Gemini se jawab nahi mila";
 
-let reply = "AI se jawab nahi mila";
-
-// Safe check
-if (
-  aiData &&
-  aiData.choices &&
-  aiData.choices[0] &&
-  aiData.choices[0].message &&
-  aiData.choices[0].message.content
-) {
-  reply = aiData.choices[0].message.content;
-} else if (aiData.error && aiData.error.message) {
-  reply = "AI Error: " + aiData.error.message;
-}
+        if (
+          data.candidates &&
+          data.candidates[0] &&
+          data.candidates[0].content &&
+          data.candidates[0].content.parts &&
+          data.candidates[0].content.parts[0]
+        ) {
+          reply = data.candidates[0].content.parts[0].text;
+        }
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, reply }));
 
       } catch (err) {
         res.writeHead(500);
-        res.end(JSON.stringify({ error: "AI error", detail: err.message }));
+        res.end(JSON.stringify({
+          success: false,
+          error: err.message
+        }));
       }
     });
     return;
   }
 
+  // Root
   res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("PK Voice AI backend with REAL AI 🤖");
+  res.end("PK Voice AI backend with GEMINI FREE 🤖");
 
 });
 
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
-
