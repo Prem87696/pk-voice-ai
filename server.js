@@ -1,40 +1,12 @@
-import express from "express";
-import cors from "cors";
+import http from "http";
 
-const app = express();
-
-/* ===== OPEN CORS (NO BLOCKING) ===== */
-app.use(cors());
-app.options("*", cors());
-
-app.use(express.json());
-
-/* ===== ROOT TEST ===== */
-app.get("/", (req, res) => {
-  res.status(200).send("PK Voice AI is running 🚀");
-});
-
-/* ===== API ===== */
-app.post("/api/ai", (req, res) => {
-  try {
-    const { text } = req.body;
-
-    if (!text) {
-      return res.status(400).json({ error: "Text missing" });
-    }
-
-    res.status(200).json({
-      success: true,
-      reply: "PK Voice AI working perfectly ✅"
-    });
-
-  } catch (e) {
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-/* ===== PORT ===== */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("PK Voice AI basic server running ✅");
+});
+
+server.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port", PORT);
 });
