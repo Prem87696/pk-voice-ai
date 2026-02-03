@@ -42,8 +42,25 @@ const server = http.createServer(async (req, res) => {
           }
         );
 
-        const aiData = await aiRes.json();
-        const reply = aiData.choices[0].message.content;
+       const aiData = await aiRes.json();
+
+// 🔍 Debug ke liye (Railway logs me dikhega)
+console.log("AI RAW RESPONSE:", aiData);
+
+let reply = "AI se jawab nahi mila";
+
+// Safe check
+if (
+  aiData &&
+  aiData.choices &&
+  aiData.choices[0] &&
+  aiData.choices[0].message &&
+  aiData.choices[0].message.content
+) {
+  reply = aiData.choices[0].message.content;
+} else if (aiData.error && aiData.error.message) {
+  reply = "AI Error: " + aiData.error.message;
+}
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ success: true, reply }));
@@ -64,3 +81,4 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
+
