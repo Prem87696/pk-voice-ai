@@ -1,56 +1,33 @@
 import express from "express";
 import cors from "cors";
-import fetch from "node-fetch";
 
 const app = express();
 
-/* ===============================
-   CORS – MUST BE AT TOP
-================================ */
+/* ---- CORS ---- */
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
 }));
-
-app.options("*", cors()); // 🔥 VERY IMPORTANT
+app.options("*", cors());
 
 app.use(express.json());
 
-/* ===============================
-   TEST ROUTE
-================================ */
+/* ---- ROOT ---- */
 app.get("/", (req, res) => {
-  res.send("PK Voice AI Backend Running 🚀");
+  res.status(200).send("PK Voice AI Backend is LIVE 🚀");
 });
 
-/* ===============================
-   AI ROUTE
-================================ */
+/* ---- API ---- */
 app.post("/api/ai", async (req, res) => {
-  try {
-    const { prompt } = req.body;
-
-    if (!prompt) {
-      return res.status(400).json({ reply: "Prompt missing" });
-    }
-
-    // 🔁 demo response (testing ke liye)
-    // yaha baad me AI API call kar sakte ho
-    res.json({
-      reply: `Tumne poocha: ${prompt}`
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ reply: "Server error" });
-  }
+  const { prompt } = req.body;
+  res.json({
+    reply: `Tumne bola: ${prompt}`
+  });
 });
 
-/* ===============================
-   PORT (Railway)
-================================ */
+/* ---- PORT (VERY IMPORTANT) ---- */
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log("Server running on", PORT);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log("Server running on port", PORT);
 });
