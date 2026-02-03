@@ -1,148 +1,16 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>PK Voice AI</title>
-
-<style>
-*{box-sizing:border-box;font-family:system-ui,-apple-system,BlinkMacSystemFont}
-body{
-  margin:0;
-  background:linear-gradient(135deg,#0f172a,#020617);
-  color:#fff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-.app{
-  width:100%;
-  max-width:420px;
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-}
-.header{
-  padding:16px;
-  text-align:center;
-  font-weight:700;
-  font-size:18px;
-  background:#020617;
-}
-.chat{
-  flex:1;
-  padding:12px;
-  overflow-y:auto;
-}
-.msg{
-  max-width:80%;
-  margin-bottom:10px;
-  padding:10px 14px;
-  border-radius:14px;
-  animation:pop .25s ease;
-  line-height:1.4;
-}
-.user{background:#2563eb;margin-left:auto;border-bottom-right-radius:4px}
-.ai{background:#0f766e;margin-right:auto;border-bottom-left-radius:4px}
-
-.typing{
-  display:flex;
-  gap:4px;
-  padding:10px;
-}
-.dot{
-  width:6px;height:6px;
-  background:#9ca3af;
-  border-radius:50%;
-  animation:blink 1.4s infinite both;
-}
-.dot:nth-child(2){animation-delay:.2s}
-.dot:nth-child(3){animation-delay:.4s}
-
-.controls{
-  padding:12px;
-  background:#020617;
-  display:flex;
-  gap:10px;
-}
-button{
-  flex:1;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  background:#2563eb;
-  color:white;
-  font-size:16px;
-  cursor:pointer;
-}
-
-@keyframes pop{from{transform:scale(.9);opacity:0}to{opacity:1}}
-@keyframes blink{0%{opacity:.2}20%{opacity:1}100%{opacity:.2}}
-</style>
+  <title>PK Voice AI</title>
 </head>
-
 <body>
-<div class="app">
-  <div class="header">🎤 PK Voice AI</div>
+  <h2>PK Voice AI</h2>
 
-  <div id="chat" class="chat"></div>
+  <input id="q" placeholder="सवाल लिखो" />
+  <button onclick="askAI()">Ask</button>
 
-  <div class="controls">
-    <button id="speakBtn">🎙 Speak</button>
-  </div>
-</div>
+  <p id="res"></p>
 
-<script>
-const API_URL = "https://pk-voice-ai-production.up.railway.app/api/ai";
-
-const chat = document.getElementById("chat");
-const btn = document.getElementById("speakBtn");
-
-function addMsg(text,type){
-  const div=document.createElement("div");
-  div.className="msg "+type;
-  div.innerText=text;
-  chat.appendChild(div);
-  chat.scrollTop=chat.scrollHeight;
-}
-
-function typingBubble(){
-  const wrap=document.createElement("div");
-  wrap.className="msg ai";
-  wrap.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
-  chat.appendChild(wrap);
-  chat.scrollTop=chat.scrollHeight;
-  return wrap;
-}
-
-const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-const recog=new SpeechRecognition();
-recog.lang="hi-IN";
-recog.interimResults=false;
-
-btn.onclick=()=>recog.start();
-
-recog.onresult=async(e)=>{
-  const text=e.results[0][0].transcript;
-  addMsg(text,"user");
-
-  const loader=typingBubble();
-
-  try{
-    const res=await fetch(API_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({prompt:text})
-    });
-    const data=await res.json();
-    loader.remove();
-    addMsg(data.reply || "Kuch error aaya 😕","ai");
-  }catch{
-    loader.remove();
-    addMsg("Server se response nahi mila ❌","ai");
-  }
-};
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
