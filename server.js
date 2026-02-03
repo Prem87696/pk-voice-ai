@@ -3,32 +3,42 @@ import cors from "cors";
 
 const app = express();
 
-/* ---- MIDDLEWARE ---- */
-app.use(express.json());
-
+/* ===== MIDDLEWARE ===== */
 app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "OPTIONS"],
+  origin: "*",               // अभी testing के लिए open
+  methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
+app.use(express.json());
 
-app.options("*", cors());
-
-/* ---- HEALTH CHECK ---- */
+/* ===== TEST ROUTE ===== */
 app.get("/", (req, res) => {
-  res.status(200).send("PK Voice AI Backend is LIVE 🚀");
+  res.send("PK Voice AI is running 🚀");
 });
 
-/* ---- API ---- */
-app.post("/api/ai", (req, res) => {
-  const { prompt } = req.body || {};
-  res.json({
-    reply: `Tumne bola: ${prompt}`
-  });
+/* ===== AI API ROUTE ===== */
+app.post("/api/ai", async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: "Text missing" });
+    }
+
+    // 🔹 अभी demo reply
+    res.json({
+      success: true,
+      question: text,
+      reply: "यह PK Voice AI का demo response है ✅"
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
-/* ---- START SERVER ---- */
-const PORT = process.env.PORT;
+/* ===== PORT (Railway Compatible) ===== */
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
