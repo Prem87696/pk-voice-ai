@@ -3,12 +3,16 @@ import cors from "cors";
 
 const app = express();
 
-/* ===== MIDDLEWARE ===== */
+/* ===== CORS (MOST IMPORTANT PART) ===== */
 app.use(cors({
-  origin: "*",               // अभी testing के लिए open
-  methods: ["GET", "POST"],
+  origin: "https://prem87696.github.io",   // GitHub Pages domain
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
 }));
+
+// 🔥 Preflight fix (THIS SOLVES YOUR ERROR)
+app.options("*", cors());
+
 app.use(express.json());
 
 /* ===== TEST ROUTE ===== */
@@ -16,28 +20,21 @@ app.get("/", (req, res) => {
   res.send("PK Voice AI is running 🚀");
 });
 
-/* ===== AI API ROUTE ===== */
-app.post("/api/ai", async (req, res) => {
-  try {
-    const { text } = req.body;
+/* ===== API ROUTE ===== */
+app.post("/api/ai", (req, res) => {
+  const { text } = req.body;
 
-    if (!text) {
-      return res.status(400).json({ error: "Text missing" });
-    }
-
-    // 🔹 अभी demo reply
-    res.json({
-      success: true,
-      question: text,
-      reply: "यह PK Voice AI का demo response है ✅"
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
+  if (!text) {
+    return res.status(400).json({ error: "Text missing" });
   }
+
+  res.json({
+    success: true,
+    reply: "यह PK Voice AI का सही response है ✅"
+  });
 });
 
-/* ===== PORT (Railway Compatible) ===== */
+/* ===== PORT ===== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
