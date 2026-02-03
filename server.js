@@ -1,5 +1,4 @@
- // server.js
-import express from "express";
+ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 
@@ -8,46 +7,48 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.send("PK Voice AI backend with GEMINI FREE 🤖");
+  res.send("PK Voice AI backend running ✅");
 });
 
 app.post("/api/ai", async (req, res) => {
   try {
-    const userText = req.body.text;
-    if (!userText) {
-      return res.json({ success: false, reply: "No text received" });
+    const text = req.body.text;
+    if (!text) {
+      return res.json({ success: false, reply: "Text missing" });
     }
 
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) {
-      return res.json({ success: false, reply: "Gemini API key missing" });
+    // Gemini FREE
+    const gRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text }] }]
+        })
+      }
+    );
+
+    const gData = await gRes.json();
+
+    if (gData?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return res.json({
+        success: true,
+        reply: gData.candidates[0].content.parts[0].text
+      });
     }
 
-    const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
-      geminiKey;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: userText }]
-          }
-        ]
-      })
+    return res.json({
+      success: false,
+      reply: "Gemini no response"
     });
 
-    const data = await response.json();
-
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No reply from Gemini";
-
-    res.json({ success: true, reply });
   } catch (err) {
-    res.json({ success: false, reply: "Server error: " + err.message });
+    console.error("Server error:", err.message);
+    return res.status(500).json({
+      success: false,
+      reply: "Backend crashed ❌"
+    });
   }
 });
 
