@@ -4,19 +4,21 @@ import cors from "cors";
 
 const app = express();
 
-// ✅ CORS – GitHub Pages allow
+/* 🔥 CORS – allow GitHub Pages */
 app.use(cors({
-  origin: "*",   // अभी testing के लिए
+  origin: "*",            // abhi sab allow (later restrict kar sakte ho)
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
 
 app.use(express.json());
 
+/* ✅ Health check */
 app.get("/", (req, res) => {
-  res.send("PK Voice AI backend running ✅");
+  res.send("PK Voice AI Backend Running 🚀");
 });
 
+/* ✅ AI API */
 app.post("/api/ai", async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -25,16 +27,14 @@ app.post("/api/ai", async (req, res) => {
       return res.status(400).json({ error: "Prompt missing" });
     }
 
-    const apiKey = process.env.API_KEY;
-
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.API_KEY}`
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
+        model: "gpt-3.5-turbo",
         messages: [{ role: "user", content: prompt }]
       })
     });
@@ -51,6 +51,7 @@ app.post("/api/ai", async (req, res) => {
   }
 });
 
+/* 🚀 Railway port */
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
