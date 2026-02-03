@@ -1,61 +1,56 @@
 import express from "express";
-import fetch from "node-fetch";
 import cors from "cors";
+import fetch from "node-fetch";
 
 const app = express();
 
-/* 🔥 CORS – allow GitHub Pages */
+/* ===============================
+   CORS – MUST BE AT TOP
+================================ */
 app.use(cors({
-  origin: "*",            // abhi sab allow (later restrict kar sakte ho)
-  methods: ["GET", "POST"],
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"]
 }));
 
+app.options("*", cors()); // 🔥 VERY IMPORTANT
+
 app.use(express.json());
 
-/* ✅ Health check */
+/* ===============================
+   TEST ROUTE
+================================ */
 app.get("/", (req, res) => {
   res.send("PK Voice AI Backend Running 🚀");
 });
 
-/* ✅ AI API */
+/* ===============================
+   AI ROUTE
+================================ */
 app.post("/api/ai", async (req, res) => {
   try {
     const { prompt } = req.body;
 
     if (!prompt) {
-      return res.status(400).json({ error: "Prompt missing" });
+      return res.status(400).json({ reply: "Prompt missing" });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-
-    const data = await response.json();
-
+    // 🔁 demo response (testing ke liye)
+    // yaha baad me AI API call kar sakte ho
     res.json({
-      reply: data.choices?.[0]?.message?.content || "No reply"
+      reply: `Tumne poocha: ${prompt}`
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ reply: "Server error" });
   }
 });
 
-/* 🚀 Railway port */
+/* ===============================
+   PORT (Railway)
+================================ */
 const PORT = process.env.PORT || 8080;
-
 app.listen(PORT, () => {
   console.log("Server running on", PORT);
 });
-
-
