@@ -3,35 +3,34 @@ import cors from "cors";
 
 const app = express();
 
-/* ===== CORS (MOST IMPORTANT PART) ===== */
-app.use(cors({
-  origin: "https://prem87696.github.io",   // GitHub Pages domain
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"]
-}));
-
-// 🔥 Preflight fix (THIS SOLVES YOUR ERROR)
+/* ===== OPEN CORS (NO BLOCKING) ===== */
+app.use(cors());
 app.options("*", cors());
 
 app.use(express.json());
 
-/* ===== TEST ROUTE ===== */
+/* ===== ROOT TEST ===== */
 app.get("/", (req, res) => {
-  res.send("PK Voice AI is running 🚀");
+  res.status(200).send("PK Voice AI is running 🚀");
 });
 
-/* ===== API ROUTE ===== */
+/* ===== API ===== */
 app.post("/api/ai", (req, res) => {
-  const { text } = req.body;
+  try {
+    const { text } = req.body;
 
-  if (!text) {
-    return res.status(400).json({ error: "Text missing" });
+    if (!text) {
+      return res.status(400).json({ error: "Text missing" });
+    }
+
+    res.status(200).json({
+      success: true,
+      reply: "PK Voice AI working perfectly ✅"
+    });
+
+  } catch (e) {
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  res.json({
-    success: true,
-    reply: "यह PK Voice AI का सही response है ✅"
-  });
 });
 
 /* ===== PORT ===== */
