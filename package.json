@@ -2,7 +2,11 @@
   "name": "pk-voice-ai",
   "version": "1.0.0",
   "type": "module",
+  "private": true,
   "scripts": {
     "start": "node server.js"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
