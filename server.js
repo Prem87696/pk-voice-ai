@@ -23,17 +23,19 @@ app.post("/api/ai", async (req, res) => {
   try {
     const { text } = req.body;
     
+    // 1. Check if text exists
     if (!text) {
-      return res.status(400).json({ success: false, reply: "Text missing in request body" });
+      return res.status(400).json({ success: false, reply: "Text missing" });
     }
 
+    // 2. Check if API Key exists
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ success: false, reply: "API Key is not configured on server" });
+      return res.status(500).json({ success: false, reply: "Server error: API Key missing" });
     }
 
-    // Gemini 1.5 Flash का उपयोग करना बेहतर है (Latest & Fast)
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // 3. Stable Gemini URL (v1/gemini-pro is most reliable)
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: "POST",
@@ -45,37 +47,34 @@ app.post("/api/ai", async (req, res) => {
 
     const data = await response.json();
 
-    // Debugging के लिए: Railway Logs में पूरा response देखने के लिए
-    console.log("Gemini Raw Response:", JSON.stringify(data));
-
-    // अगर Google कोई एरर भेजता है
+    // 4. Detailed Error Handling for API Response
     if (data.error) {
+      console.error("Google API Error Details:", data.error);
       return res.status(data.error.code || 500).json({ 
         success: false, 
         reply: `Google API Error: ${data.error.message}` 
       });
     }
 
-    // Response से टेक्स्ट निकालना
+    // 5. Extract Text Safely
     const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (reply) {
       return res.json({ success: true, reply });
     } else {
-      // अगर safety filters की वजह से जवाब न मिले
       return res.json({ 
         success: false, 
-        reply: "AI could not generate a response (Safety filters or empty result)." 
+        reply: "AI generated an empty response. This could be due to safety filters." 
       });
     }
 
   } catch (err) {
-    console.error("Server Error:", err);
+    console.error("Critical Server Error:", err);
     res.status(500).json({ success: false, reply: "Internal Server Error: " + err.message });
   }
 });
 
 // ===== START SERVER =====
 app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`🚀 Server is live on port ${PORT}`);
 });
