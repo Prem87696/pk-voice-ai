@@ -1,19 +1,14 @@
-import express from "express";
-import cors from "cors";
-import fetch from "node-fetch";
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 // ===== Middleware =====
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
+app.use(cors());
 app.use(express.json());
 
-// ===== Test route =====
+// ===== Health check =====
 app.get("/", (req, res) => {
   res.send("PK Voice AI backend running ✅");
 });
@@ -28,12 +23,10 @@ app.post("/api/ai", async (req, res) => {
     }
 
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
-
     if (!GEMINI_KEY) {
       return res.json({ success: false, reply: "Gemini API key missing" });
     }
 
-    // ===== Gemini API call =====
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_KEY}`,
       {
@@ -59,16 +52,8 @@ app.post("/api/ai", async (req, res) => {
 
   } catch (err) {
     console.error("AI ERROR:", err);
-    res.json({
-      success: false,
-      reply: "Server AI error"
-    });
+    res.json({ success: false, reply: "Server error" });
   }
-});
-
-// ===== 404 fallback (IMPORTANT) =====
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
 });
 
 // ===== Start server =====
