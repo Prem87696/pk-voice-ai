@@ -20,20 +20,20 @@ app.post("/api/ai", async (req, res) => {
       return res.json({ success: false, reply: "No input text" });
     }
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text }]
-            }
-          ]
-        })
-      }
-    );
+   const response = await fetch(
+  `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [{ text }]
+        }
+      ]
+    })
+  }
+);
 
     const data = await geminiRes.json();
 
@@ -58,3 +58,4 @@ app.post("/api/ai", async (req, res) => {
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
+
