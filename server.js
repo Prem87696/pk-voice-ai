@@ -1,61 +1,77 @@
-// server.js
 import express from "express";
 import cors from "cors";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import fetch from "node-fetch";
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-/* ---------- Middlewares ---------- */
-app.use(cors());
+// ===== Middleware =====
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
 app.use(express.json());
 
-/* ---------- Gemini Setup ---------- */
-if (!process.env.GEMINI_API_KEY) {
-  console.error("❌ GEMINI_API_KEY missing");
-}
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-/* ---------- Home Route ---------- */
+// ===== Test route =====
 app.get("/", (req, res) => {
   res.send("PK Voice AI backend running ✅");
 });
 
-/* ---------- AI Route ---------- */
+// ===== AI Route =====
 app.post("/api/ai", async (req, res) => {
   try {
     const { text } = req.body;
 
     if (!text) {
-      return res.json({
-        success: false,
-        reply: "Text missing"
-      });
+      return res.json({ success: false, reply: "No text provided" });
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash"   // FREE & fast
-    });
+    const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
-    const result = await model.generateContent(text);
-    const reply = result.response.text();
+    if (!GEMINI_KEY) {
+      return res.json({ success: false, reply: "Gemini API key missing" });
+    }
 
-    return res.json({
-      success: true,
-      reply
-    });
+    // ===== Gemini API call =====
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text }]
+            }
+          ]
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Gemini no response";
+
+    res.json({ success: true, reply });
 
   } catch (err) {
-    console.error("❌ Gemini Error:", err.message);
-    return res.json({
+    console.error("AI ERROR:", err);
+    res.json({
       success: false,
-      reply: "Gemini error: " + err.message
+      reply: "Server AI error"
     });
   }
 });
 
-/* ---------- Start Server ---------- */
+// ===== 404 fallback (IMPORTANT) =====
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
+// ===== Start server =====
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
