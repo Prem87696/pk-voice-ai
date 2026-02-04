@@ -9,19 +9,18 @@ app.use(express.json());
 const PORT = process.env.PORT || 8080;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// health check
 app.get("/", (req, res) => {
   res.send("PK Voice AI backend running ✅");
 });
 
 app.post("/api/ai", async (req, res) => {
   try {
-    const { text } = req.body;
+    const text = req.body.text;
     if (!text) {
       return res.json({ success: false, reply: "No input text" });
     }
 
-    const response = await fetch(
+    const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
@@ -36,20 +35,23 @@ app.post("/api/ai", async (req, res) => {
       }
     );
 
-    const data = await response.json();
+    const data = await geminiRes.json();
 
     const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Gemini did not return any text";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!reply) {
+      return res.json({
+        success: false,
+        reply: "Gemini returned empty response",
+        raw: data
+      });
+    }
 
     res.json({ success: true, reply });
 
-  } catch (err) {
-    res.json({
-      success: false,
-      reply: "Gemini error",
-      error: err.message
-    });
+  } catch (e) {
+    res.json({ success: false, reply: e.message });
   }
 });
 
