@@ -1,80 +1,61 @@
-// server.js (ES Module)
 import express from "express";
 import cors from "cors";
+import fetch from "node-fetch";
 
 const app = express();
-const PORT = process.env.PORT || 8080;
 
-// ===== MIDDLEWARE =====
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
+app.use(cors());
 app.use(express.json());
 
-// ===== HEALTH CHECK =====
 app.get("/", (req, res) => {
   res.send("PK Voice AI backend running ✅");
 });
 
-// ===== AI API =====
 app.post("/api/ai", async (req, res) => {
   try {
     const { text } = req.body;
-    
-    // 1. Check if text exists
+
     if (!text) {
-      return res.status(400).json({ success: false, reply: "Text missing" });
+      return res.json({ success: false, reply: "Text missing" });
     }
 
-    // 2. Check if API Key exists
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ success: false, reply: "Server error: API Key missing" });
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({ success: false, reply: "Gemini API key missing" });
     }
 
-    // 3. Stable Gemini URL (v1/gemini-pro is most reliable)
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    const url =
+      "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=" +
+      process.env.GEMINI_API_KEY;
 
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: text }] }]
+        contents: [
+          {
+            parts: [{ text }]
+          }
+        ]
       })
     });
 
     const data = await response.json();
 
-    // 4. Detailed Error Handling for API Response
-    if (data.error) {
-      console.error("Google API Error Details:", data.error);
-      return res.status(data.error.code || 500).json({ 
-        success: false, 
-        reply: `Google API Error: ${data.error.message}` 
-      });
-    }
+    console.log("Gemini response:", JSON.stringify(data));
 
-    // 5. Extract Text Safely
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response from Gemini";
 
-    if (reply) {
-      return res.json({ success: true, reply });
-    } else {
-      return res.json({ 
-        success: false, 
-        reply: "AI generated an empty response. This could be due to safety filters." 
-      });
-    }
+    res.json({ success: true, reply });
 
   } catch (err) {
-    console.error("Critical Server Error:", err);
-    res.status(500).json({ success: false, reply: "Internal Server Error: " + err.message });
+    console.error(err);
+    res.json({ success: false, reply: err.message });
   }
 });
 
-// ===== START SERVER =====
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`🚀 Server is live on port ${PORT}`);
+  console.log("Server running on port", PORT);
 });
