@@ -1,58 +1,61 @@
- import express from "express";
+// server.js
+import express from "express";
 import cors from "cors";
-import fetch from "node-fetch";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const app = express();
+const PORT = process.env.PORT || 8080;
+
+/* ---------- Middlewares ---------- */
 app.use(cors());
 app.use(express.json());
 
+/* ---------- Gemini Setup ---------- */
+if (!process.env.GEMINI_API_KEY) {
+  console.error("❌ GEMINI_API_KEY missing");
+}
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+/* ---------- Home Route ---------- */
 app.get("/", (req, res) => {
   res.send("PK Voice AI backend running ✅");
 });
 
+/* ---------- AI Route ---------- */
 app.post("/api/ai", async (req, res) => {
   try {
-    const text = req.body.text;
+    const { text } = req.body;
+
     if (!text) {
-      return res.json({ success: false, reply: "Text missing" });
-    }
-
-    // Gemini FREE
-    const gRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text }] }]
-        })
-      }
-    );
-
-    const gData = await gRes.json();
-
-    if (gData?.candidates?.[0]?.content?.parts?.[0]?.text) {
       return res.json({
-        success: true,
-        reply: gData.candidates[0].content.parts[0].text
+        success: false,
+        reply: "Text missing"
       });
     }
 
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash"   // FREE & fast
+    });
+
+    const result = await model.generateContent(text);
+    const reply = result.response.text();
+
     return res.json({
-      success: false,
-      reply: "Gemini no response"
+      success: true,
+      reply
     });
 
   } catch (err) {
-    console.error("Server error:", err.message);
-    return res.status(500).json({
+    console.error("❌ Gemini Error:", err.message);
+    return res.json({
       success: false,
-      reply: "Backend crashed ❌"
+      reply: "Gemini error: " + err.message
     });
   }
 });
 
-const PORT = process.env.PORT || 8080;
+/* ---------- Start Server ---------- */
 app.listen(PORT, () => {
   console.log("Server running on port", PORT);
 });
